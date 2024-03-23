@@ -7,7 +7,25 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="10dp"
+    android:background="@color/blue"
     tools:context=".MainActivity">
+
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="match_parent"
+        android:layout_height="65dp"
+        android:contentDescription="@string/logo"
+        android:src="@drawable/san_jose_state_spartans_logo" />
+
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="(OCR) Analytics"
+        android:textColor="@color/white"
+        android:textSize="25sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -21,7 +39,8 @@
             android:layout_weight="1"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="Take Image"
+            android:text="@string/take_image"
+            android:textColor="@color/yellow"
             tools:ignore="ButtonStyle" />
 
         <Button
@@ -29,7 +48,8 @@
             android:layout_weight="1"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="OCR"
+            android:text="@string/ocr"
+            android:textColor="@color/yellow"
             tools:ignore="ButtonStyle" />
         
     </LinearLayout>
@@ -46,7 +66,7 @@
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/imageIv"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="250dp"
                 android:src="@drawable/baseline_image_24"
                 android:adjustViewBounds="true"
                 app:strokeWidth="2dp" />
@@ -56,10 +76,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="Detected Text:" />
+                android:textColor="@color/yellow"
+                android:text="@string/detected_text" />
 
             <TextView
                 android:id="@+id/recognizedText"
+                android:textColor="@color/white"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textSize="12sp" />

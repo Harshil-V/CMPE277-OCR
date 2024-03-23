@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">CMPE277_ORC</string>
+    <string name="detected_text">Detected Text:</string>
+    <string name="ocr">OCR</string>
+    <string name="take_image">Take Image</string>
+    <string name="logo">logo</string>
 </resources>

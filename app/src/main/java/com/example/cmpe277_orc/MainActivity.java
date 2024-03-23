@@ -44,22 +44,22 @@ import com.google.mlkit.vision.text.TextRecognizer;
 import com.google.mlkit.vision.text.TextRecognizerOptionsInterface;
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
+/**
+ * Main activity class that serves as the entry point for the app.
+ * This class handles image input for OCR (Optical Character Recognition),
+ * requests necessary permissions, and displays the recognized text.
+ */
 public class MainActivity extends AppCompatActivity {
 
-    private Button inputImageBtn;
-    private Button orcBtn;
     private ShapeableImageView imageView;
     private TextView recognizedTextView;
     private ProgressDialog progressDialog;
 
-//    private static final String TAG = "MAIN_TAG";
     private Uri imageUri = null;
 
     private static final int CAMERA_REQUEST_CODE = 100;
-//    private static final int STORAGE_REQUEST_CODE = 101;
 
     private String[] cameraPermissions;
-    private String[] storagePermissions;
 
     private TextRecognizer textRecognizer;
 
@@ -74,13 +74,12 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        inputImageBtn = findViewById(R.id.inputImageBtn);
-        orcBtn = findViewById(R.id.orcBtn);
+        Button inputImageBtn = findViewById(R.id.inputImageBtn);
+        Button orcBtn = findViewById(R.id.orcBtn);
         imageView = findViewById(R.id.imageIv);
         recognizedTextView = findViewById(R.id.recognizedText);
 
         cameraPermissions = new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE};
-//        storagePermissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
         progressDialog = new ProgressDialog(this);
         progressDialog.setTitle("Please Wait");
@@ -88,7 +87,14 @@ public class MainActivity extends AppCompatActivity {
 
         textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
 
-        inputImageBtn.setOnClickListener(v -> showInputImageDialog());
+        inputImageBtn.setOnClickListener(v -> {
+            if (checkCameraPermission()) {
+                pickImageCamera();
+            }
+            else {
+                requestCameraPermission();
+            }
+        });
 
         orcBtn.setOnClickListener(v -> {
             if (imageUri == null) {
@@ -100,6 +106,10 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    /**
+     * Starts the process of recognizing text from the image captured or selected by the user.
+     * Displays a progress dialog while processing and shows the recognized text or error messages.
+     */
     private void recognizedImageText() {
         progressDialog.setMessage("Setting image.....");
         progressDialog.show();
@@ -108,16 +118,16 @@ public class MainActivity extends AppCompatActivity {
             InputImage inputImage = InputImage.fromFilePath(this, imageUri);
             progressDialog.setMessage("Detecting Text.....");
 
-            Task<Text> result = textRecognizer.process(inputImage)
-                    .addOnSuccessListener(text -> {
-                        progressDialog.dismiss();
-                        recognizedTextView.setText(text.getText());
-                    })
-                    .addOnFailureListener(e -> {
-                        progressDialog.dismiss();
-                        Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            textRecognizer.process(inputImage)
+                .addOnSuccessListener(text -> {
+                    progressDialog.dismiss();
+                    recognizedTextView.setText(text.getText());
+                })
+                .addOnFailureListener(e -> {
+                    progressDialog.dismiss();
+                    Toast.makeText(MainActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
 
-                    });
+                });
 
         } catch (Exception e) {
             progressDialog.dismiss();
@@ -125,60 +135,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void showInputImageDialog() {
-        if (checkCameraPermission()) {
-            pickImageCamera();
-        }
-        else {
-            requestCameraPermission();
-        }
-//        PopupMenu popupMenu = new PopupMenu(this, inputImageBtn);
-//        popupMenu.getMenu().add(Menu.NONE,1,1,"CAMERA");
-////        popupMenu.getMenu().add(Menu.NONE,2,2,"GALLERY");
-//
-//        popupMenu.show();
-//
-//        popupMenu.setOnMenuItemClickListener(item -> {
-//            int id = item.getItemId();
-//
-//            if (id == 1) {
-//                if (checkCameraPermission()) {
-//                    pickImageCamera();
-//                }
-//                else {
-//                    requestCameraPermission();
-//                }
-//            }
-////            else if (id == 2) {
-////                if (checkStoragePermission()) {
-////                    pickImageGallery();
-////                } else {
-////                    requestStoragePermission();
-////                }
-////            }
-//            return true;
-//        });
-    }
-
-    private void pickImageGallery() {
-        Intent intent = new Intent(Intent.ACTION_PICK);
-        intent.setType("image/*");
-        galleryActivityResultLauncher.launch(intent);
-    }
-    private ActivityResultLauncher<Intent> galleryActivityResultLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            o -> {
-                if (o.getResultCode() == Activity.RESULT_OK) {
-                    Intent data = o.getData();
-                    assert data != null;
-                    imageUri = data.getData();
-                    imageView.setImageURI(imageUri);
-                } else {
-                    Toast.makeText(MainActivity.this, "Cancelled...", Toast.LENGTH_SHORT).show();
-                }
-            }
-    );
-
+    /**
+     * Launches the camera intent to capture an image.
+     * Prepares ContentValues for image meta-data and handles the camera result.
+     */
     private void pickImageCamera() {
         ContentValues values = new ContentValues();
         values.put(MediaStore.Images.Media.TITLE, "Test Title");
@@ -191,7 +151,24 @@ public class MainActivity extends AppCompatActivity {
         cameraActivityResultLauncher.launch(intent);
     }
 
-    private ActivityResultLauncher<Intent> cameraActivityResultLauncher = registerForActivityResult(
+    /**
+     * Checks if the application has been granted camera and storage permissions.
+     * @return True if all required permissions are granted, false otherwise.
+     */
+    private boolean checkCameraPermission() {
+        boolean camera = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == (PackageManager.PERMISSION_GRANTED);
+        boolean storage = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == (PackageManager.PERMISSION_GRANTED);
+        return camera && storage;
+    }
+
+    /**
+     * Requests runtime permissions necessary for the app, specifically camera and storage permissions.
+     */
+    private void requestCameraPermission() {
+        ActivityCompat.requestPermissions(this, cameraPermissions, CAMERA_REQUEST_CODE);
+    }
+
+    private final ActivityResultLauncher<Intent> cameraActivityResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             o -> {
                 if (o.getResultCode() == Activity.RESULT_OK) {
@@ -202,59 +179,31 @@ public class MainActivity extends AppCompatActivity {
             }
     );
 
-    private boolean checkStoragePermission() {
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == (PackageManager.PERMISSION_GRANTED);
-    }
-
-//    private void requestStoragePermission() {
-//        ActivityCompat.requestPermissions(this, storagePermissions, STORAGE_REQUEST_CODE);
-//    }
-
-    private boolean checkCameraPermission() {
-        boolean camera = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == (PackageManager.PERMISSION_GRANTED);
-        boolean storage = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == (PackageManager.PERMISSION_GRANTED);
-        return camera && storage;
-    }
-
-    private void requestCameraPermission() {
-        ActivityCompat.requestPermissions(this, cameraPermissions, CAMERA_REQUEST_CODE);
-    }
-
+    /**
+     * Callback for the result from requesting permissions. This method
+     * is invoked for every call on requestPermissions(android.app.Activity, String[], int).
+     *
+     * @param requestCode The request code passed in requestPermissions(android.app.Activity, String[], int).
+     * @param permissions The requested permissions. Never null.
+     * @param grantResults The grant results for the corresponding permissions
+     *                     which is either PERMISSION_GRANTED or PERMISSION_DENIED. Never null.
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        switch (requestCode) {
-            case CAMERA_REQUEST_CODE: {
-                if (grantResults.length > 0) {
-                    boolean cameraAllowed = grantResults[0] == PackageManager.PERMISSION_GRANTED;
+        if (requestCode == CAMERA_REQUEST_CODE) {
+            if (grantResults.length > 0) {
+                boolean cameraAllowed = grantResults[0] == PackageManager.PERMISSION_GRANTED;
 
-                    if (cameraAllowed) {
-                        pickImageCamera();
-                    } else {
-                        Toast.makeText(this, "Camera & Storage Permission Required", Toast.LENGTH_SHORT).show();
-                    }
+                if (cameraAllowed) {
+                    pickImageCamera();
                 } else {
-                    Toast.makeText(this, "Cancelled", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Permission Required", Toast.LENGTH_SHORT).show();
                 }
-            } // CAMERA_REQUEST_CODE
-            break;
-//            case STORAGE_REQUEST_CODE: {
-//                if (grantResults.length > 0) {
-//                    boolean storageAllowed = grantResults[0] == PackageManager.PERMISSION_GRANTED;
-//
-//                    if (storageAllowed) {
-//                        pickImageGallery();
-//                    } else {
-//                        Toast.makeText(this, "Storage Permission Required", Toast.LENGTH_SHORT).show();
-//                    }
-//                } else {
-//                    Toast.makeText(this, "Cancelled", Toast.LENGTH_SHORT).show();
-//                }
-//
-//            }
-//            break;
-
+            } else {
+                Toast.makeText(this, "Cancelled", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 }
